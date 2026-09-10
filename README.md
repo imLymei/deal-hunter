@@ -1,4 +1,4 @@
-# Deal Hunter 🍴
+# Deal Hunter
 
 Deal Hunter is a online game whish list website that hunts for deals in your next games across many virtual stores using [CheapShark API](https://apidocs.cheapshark.com). Multiple users can create and manage their own accounts on a single public our private server while sharing their whish list with anyone they want without limitations.
 
