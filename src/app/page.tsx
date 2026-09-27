@@ -29,6 +29,20 @@ export default function Home() {
                 {user.email}
               </p>
             </div>
+            <div className="space-y-3">
+              <a
+                href="/search"
+                className="block w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition-colors text-sm font-medium cursor-pointer text-center"
+              >
+                Search Games
+              </a>
+              <a
+                href="/wishlist"
+                className="block w-full border border-neutral-300 dark:border-neutral-700 text-white py-2 rounded-md hover:bg-neutral-800 transition-colors text-sm font-medium cursor-pointer text-center"
+              >
+                My Wishlist
+              </a>
+            </div>
             <button
               onClick={logout}
               className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition-colors text-sm font-medium cursor-pointer"
