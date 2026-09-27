@@ -6,6 +6,7 @@ interface User {
   id: number;
   username: string;
   email: string;
+  wishlist_public: boolean;
 }
 
 interface UserContextType {

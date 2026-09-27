@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "../context/UserContext";
 
@@ -81,9 +82,9 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-neutral-500">
           Don&apos;t have an account?{" "}
-          <a href="/register" className="text-green-400 underline">
+          <Link href="/register" className="text-green-400 underline">
             Register
-          </a>
+          </Link>
         </p>
       </form>
     </div>

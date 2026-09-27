@@ -22,7 +22,7 @@ export default function Navbar() {
               Search Games
             </Link>
             <Link
-              href="/wishlist"
+              href={`/${user.username}`}
               className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-neutral-50 transition-colors"
             >
               Wishlist

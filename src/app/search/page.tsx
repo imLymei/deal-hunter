@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import Link from "next/link";
 import { useUser } from "@/app/context/UserContext";
-import { searchGames, addToWishlist } from "@/lib/api";
+import { searchGames, addToWishlist, getGameDetails, formatPrice, formatDate, type GameDetails } from "@/lib/api";
 
 interface SearchResult {
   gameID: string;
@@ -18,14 +19,33 @@ export default function SearchPage() {
   const [addingId, setAddingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [gamePrices, setGamePrices] = useState<Record<string, GameDetails>>({});
 
   useEffect(() => {
     setHydrated(true);
   }, []);
 
+  const loadPricesForGames = useCallback(async (games: SearchResult[]) => {
+    const prices: Record<string, GameDetails> = {};
+    await Promise.all(
+      games.map(async (game) => {
+        try {
+          const details = await getGameDetails(game.gameID);
+          if (details) {
+            prices[game.gameID] = details;
+          }
+        } catch {
+          // ignore price fetch errors
+        }
+      })
+    );
+    setGamePrices(prices);
+  }, []);
+
   const handleSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim() || searchQuery.trim().length < 2) {
       setResults([]);
+      setGamePrices({});
       return;
     }
 
@@ -35,16 +55,18 @@ export default function SearchPage() {
     try {
       const data = await searchGames(searchQuery.trim());
       setResults(data.games);
+      loadPricesForGames(data.games);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Search failed";
       if ((err as Error & { status?: number })?.status !== 401) {
         setError(message);
       }
       setResults([]);
+      setGamePrices({});
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadPricesForGames]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +126,7 @@ export default function SearchPage() {
           {!user && !authLoading && (
             <p className="text-neutral-500 text-sm">
               Sign in to add games to your wishlist.{" "}
-              <a href="/login" className="text-green-400 hover:underline">Login</a>
+               <Link href="/login" className="text-green-400 hover:underline">Login</Link>
             </p>
           )}
 
@@ -125,7 +147,15 @@ export default function SearchPage() {
           {results.length > 0 && (
             <div className="space-y-3">
               <p className="text-sm text-neutral-500">{results.length} results found</p>
-              {results.map(game => (
+              {results.map(game => {
+                const prices = gamePrices[game.gameID];
+                const currentPrice = prices?.cheapestActiveDeal ? formatPrice(prices.cheapestActiveDeal.price) : null;
+                const everPrice = prices?.cheapestPriceEver && prices.cheapestPriceEver.price !== "0" 
+                  ? formatPrice(prices.cheapestPriceEver.price) 
+                  : null;
+                const everDate = prices?.cheapestPriceEver?.date ? formatDate(prices.cheapestPriceEver.date) : null;
+
+                return (
                 <div
                   key={game.gameID}
                   className="flex items-center gap-4 p-4 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 hover:border-green-600/50 transition-colors"
@@ -142,6 +172,32 @@ export default function SearchPage() {
                     <h3 className="text-sm font-medium text-black dark:text-neutral-50 truncate">
                       {game.title}
                     </h3>
+                    {(currentPrice || everPrice) && (
+                      <div className="flex items-center gap-4 mt-2">
+                        {currentPrice ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                              {currentPrice}
+                            </span>
+                            <span className="text-xs text-green-700 dark:text-green-500 font-medium -mt-1">
+                              Cheapest Deal Now
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-neutral-400 dark:text-neutral-500">
+                            No active deals
+                          </span>
+                        )}
+                        {everPrice && (
+                          <div className="flex items-center gap-2" title={`All-time low on ${everDate}`}>
+                            <span className="text-sm text-neutral-400 dark:text-neutral-500 line-through">
+                              {everPrice}
+                            </span>
+                            <span className="text-xs text-neutral-500 -mt-1">All-Time Low</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={() => handleAddToWishlist(game)}
@@ -151,7 +207,8 @@ export default function SearchPage() {
                     {addingId === game.gameID ? "Adding..." : "+ Wishlist"}
                   </button>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
